@@ -1,0 +1,8 @@
+# TEMPLATE: Replace all account IDs before use
+accounts:
+  example-test:
+    id: "REPLACE_WITH_TEST_ACCOUNT_ID"
+  example-prod:
+    id: "REPLACE_WITH_PROD_ACCOUNT_ID"
+  shared_services:
+    id: "REPLACE_WITH_SHARED_SERVICES_ACCOUNT_ID"

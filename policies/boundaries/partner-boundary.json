@@ -1,0 +1,46 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowServicesInBoundary",
+      "Effect": "Allow",
+      "Action": "*",
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyCreatingRolesOutsidePartnerPath",
+      "Effect": "Deny",
+      "Action": [
+        "iam:CreateRole",
+        "iam:PutRolePolicy",
+        "iam:AttachRolePolicy"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringNotLike": {
+          "iam:ResourceTag/aws:RequestedRegion": "*"
+        },
+        "StringNotLike": {
+          "iam:PermissionsBoundary": "arn:aws:iam::*:policy/REPLACE_PARTNER_NAME-boundary"
+        }
+      }
+    },
+    {
+      "Sid": "DenyRemovingBoundary",
+      "Effect": "Deny",
+      "Action": "iam:DeleteRolePermissionsBoundary",
+      "Resource": "arn:aws:iam::*:role/REPLACE_PARTNER_NAME/*"
+    },
+    {
+      "Sid": "RestrictPartnerRolesToPath",
+      "Effect": "Deny",
+      "Action": "iam:PassRole",
+      "Resource": "*",
+      "Condition": {
+        "StringNotLike": {
+          "iam:AssociatedResourceARN": "arn:aws:iam::*:role/REPLACE_PARTNER_NAME/*"
+        }
+      }
+    }
+  ]
+}

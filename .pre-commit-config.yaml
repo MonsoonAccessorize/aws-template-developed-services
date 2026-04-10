@@ -1,0 +1,146 @@
+# Pre-commit hooks for Terraform/Terragrunt repository
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+# To install: make install-hooks
+# To run manually: pre-commit run --all-files
+# To update hooks: pre-commit autoupdate
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        description: Trims trailing whitespace from files
+      - id: end-of-file-fixer
+        name: Fix end of files
+        description: Ensures files end with a newline
+      - id: check-yaml
+        name: Check YAML syntax
+        description: Validates YAML file syntax
+        args: ['--unsafe']  # Allow custom YAML tags
+      - id: check-added-large-files
+        name: Check for large files
+        description: Prevents accidentally committing large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        description: Checks for merge conflict markers
+      - id: check-case-conflict
+        name: Check for case conflicts
+        description: Checks for files with names that would conflict on case-insensitive filesystems
+      - id: mixed-line-ending
+        name: Check line endings
+        description: Ensures consistent line endings
+        args: ['--fix=lf']
+      - id: detect-private-key
+        name: Detect private keys
+        description: Detects presence of private keys
+
+  # Terraform formatting
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.99.1
+    hooks:
+      - id: terraform_fmt
+        name: Terraform format
+        description: Formats Terraform files to canonical format
+        args:
+          - --args=-recursive
+
+      - id: terraform_validate
+        name: Terraform validate
+        description: Validates Terraform configuration files
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+          - --tf-init-args=-upgrade
+        exclude: ^bootstrap/  # Bootstrap requires manual init with backend config
+
+      - id: terraform_tflint
+        name: TFLint
+        description: Lints Terraform files using TFLint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+          - --args=--call-module-type=all
+
+      - id: terraform_trivy
+        name: Trivy security scan
+        description: Scans Terraform for security issues
+        args:
+          - --args=--severity=CRITICAL,HIGH
+          - --args=--skip-dirs=".terraform"
+
+      - id: terraform_docs
+        name: Terraform docs
+        description: Generates documentation for Terraform modules
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+        files: ^modules/
+
+      - id: terragrunt_fmt
+        name: Terragrunt format
+        description: Formats Terragrunt files to canonical format
+
+      - id: terragrunt_validate
+        name: Terragrunt validate
+        description: Validates Terragrunt configuration files
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+        files: terragrunt\.hcl$  # Only run on terragrunt.hcl files
+        exclude: ^bootstrap/  # Bootstrap requires manual init
+        stages: [manual]  # Only run when explicitly requested
+        # Note: This hook requires valid AWS credentials
+        # Run manually with: pre-commit run --hook-stage manual terragrunt_validate --all-files
+        # Or enable for commits by removing 'stages: [manual]'
+
+  # YAML linting
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        name: YAML lint
+        description: Lints YAML files for syntax and style issues
+        args:
+          - --strict
+          - --config-data
+          - |
+            {
+              extends: default,
+              rules: {
+                line-length: {max: 120},
+                document-start: disable,
+                comments: {min-spaces-from-content: 1}
+              }
+            }
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+      - id: markdownlint
+        name: Markdown lint
+        description: Lints Markdown files for style issues
+        args:
+          - --fix
+          - --config
+          - .markdownlint.json
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: ShellCheck
+        description: Lints shell scripts for common issues
+        args:
+          - --severity=warning
+          - --shell=bash
+
+# Configuration
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+fail_fast: false
+minimum_pre_commit_version: '3.0.0'

@@ -1,0 +1,5 @@
+# Mandatory tags applied to all resources via provider default_tags
+# Add project-specific tags here
+mandatory_tags:
+  ManagedBy: "Terraform"
+  Repository: "adena-aws-template"  # TEMPLATE: Update to consuming repo name

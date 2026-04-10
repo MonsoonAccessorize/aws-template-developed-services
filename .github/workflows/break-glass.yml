@@ -1,0 +1,75 @@
+name: Break Glass — Emergency Deploy
+
+"on":
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for break-glass deployment (required for audit)"
+        required: true
+        type: string
+      target_account:
+        description: "Target environment to deploy"
+        required: true
+        type: choice
+        options:
+          - test
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  break-glass-deploy:
+    name: "⚠️ Break Glass Deploy — ${{ inputs.target_account }}"
+    runs-on: ubuntu-latest
+    # No approval gate — intentional bypass
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log break-glass event
+        run: |
+          echo "## ⚠️ BREAK GLASS DEPLOYMENT" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target account | ${{ inputs.target_account }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Reason | ${{ inputs.reason }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Run ID | ${{ github.run_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u) |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Resolve deploy role
+        id: role
+        run: |
+          if [ "${{ inputs.target_account }}" = "prod" ]; then
+            echo "arn=${{ secrets.TF_DEPLOY_ROLE_PROD }}" >> $GITHUB_OUTPUT
+          else
+            echo "arn=${{ secrets.TF_DEPLOY_ROLE_TEST }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ steps.role.outputs.arn }}
+          aws-region: eu-west-2
+          role-session-name: BreakGlass-${{ github.actor }}-${{ github.run_id }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Install Terragrunt
+        run: |
+          TERRAGRUNT_VERSION=0.99.4
+          TG_BASE="https://github.com/gruntwork-io/terragrunt/releases/download"
+          curl -sSL "${TG_BASE}/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64" \
+            -o /usr/local/bin/terragrunt
+          chmod +x /usr/local/bin/terragrunt
+
+      - name: Terragrunt apply (break glass)
+        run: terragrunt run --all apply --non-interactive
+        working-directory: accounts
+        env:
+          ENVIRONMENT: ${{ inputs.target_account }}

@@ -1,0 +1,72 @@
+name: Merge to Main — Deploy to Production
+
+"on":
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  prod-gate:
+    name: Await Production Approval
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Request approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: REPLACE_WITH_APPROVER_GITHUB_USERNAME # TEMPLATE: Update before use
+          minimum-approvals: 1
+          issue-title: "Production deployment approval — ${{ github.sha }}"
+          issue-body: |
+            A merge to `main` has triggered a production deployment.
+
+            **Commit:** ${{ github.sha }}
+            **Author:** ${{ github.actor }}
+            **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Reply **approve** to proceed or **deny** to cancel.
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: prod-gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (prod)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.TF_DEPLOY_ROLE_PROD }}
+          aws-region: eu-west-2
+          role-session-name: GitHubActions-Prod-${{ github.run_id }}
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Install Terragrunt
+        run: |
+          TERRAGRUNT_VERSION=0.99.4
+          TG_BASE="https://github.com/gruntwork-io/terragrunt/releases/download"
+          curl -sSL "${TG_BASE}/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64" \
+            -o /usr/local/bin/terragrunt
+          chmod +x /usr/local/bin/terragrunt
+
+      - name: Terragrunt plan (prod)
+        run: terragrunt run --all plan --non-interactive
+        working-directory: accounts
+        env:
+          ENVIRONMENT: prod
+
+      - name: Terragrunt apply (prod)
+        run: terragrunt run --all apply --non-interactive
+        working-directory: accounts
+        env:
+          ENVIRONMENT: prod
