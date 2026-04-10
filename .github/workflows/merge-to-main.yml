@@ -12,6 +12,7 @@ permissions:
 jobs:
   prod-gate:
     name: Await Production Approval
+    if: ${{ !github.event.repository.is_template }}
     runs-on: ubuntu-latest
 
     steps:
@@ -33,6 +34,7 @@ jobs:
 
   deploy-prod:
     name: Deploy to Production
+    if: ${{ !github.event.repository.is_template }}
     needs: prod-gate
     runs-on: ubuntu-latest
 

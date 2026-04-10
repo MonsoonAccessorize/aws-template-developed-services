@@ -12,6 +12,7 @@ permissions:
 jobs:
   pre-commit:
     name: Pre-commit checks
+    if: ${{ !github.event.repository.is_template }}
     runs-on: ubuntu-latest
 
     steps:
@@ -68,6 +69,7 @@ jobs:
 
   deploy-test:
     name: Deploy to Test
+    if: ${{ !github.event.repository.is_template }}
     needs: pre-commit
     runs-on: ubuntu-latest
 
