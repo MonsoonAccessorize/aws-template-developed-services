@@ -1,6 +1,7 @@
-# adena-aws-template
+# aws-template-developed-services
 
-A Terraform/Terragrunt template repository for AWS Landing Zone workloads under the Adena partner boundary.
+A Terraform/Terragrunt template repository for developing integrations and applications using AWS serverless
+technologies under the Adena partner boundary.
 
 ## Using this template
 
@@ -11,6 +12,7 @@ repository, search for all `REPLACE_ME` markers and update them:
 - `root.hcl` — update `Repository` tag, `account_environments`, `account_cost_centers`, and `account_owners` maps
 - `tags.yml` — update `Repository` tag value to the consuming repository name
 - `policies/boundaries/partner-boundary.json` — replace `REPLACE_PARTNER_NAME` with your partner path prefix
+- `modules/example-module/main.tf` — replace `REPLACE_PARTNER_NAME` in the IAM role path
 - `.github/workflows/` — update OIDC subject claim if repo is renamed
 
 ## Repository structure
@@ -18,25 +20,19 @@ repository, search for all `REPLACE_ME` markers and update them:
 ```text
 .
 ├── accounts/                        # Per-account Terragrunt configurations
-│   ├── example_test/
-│   │   ├── account.hcl              # Account-level locals (name, tags)
-│   │   └── eu-west-2/
-│   │       └── example-module/
-│   │           └── terragrunt.hcl   # Module deployment config
-│   └── example_prod/
-│       ├── account.hcl
+│   └── developed-services/
 │       └── eu-west-2/
-│           └── example-module/
-│               └── terragrunt.hcl
+│           └── example/
+│               └── terragrunt.hcl   # Module deployment config
 ├── modules/                         # Reusable Terraform modules
-│   └── example-module/
+│   └── example-module/              # Lambda execution role + CloudWatch log group
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
 │       └── README.md
 ├── policies/
 │   └── boundaries/
-│       └── partner-boundary.json    # IAM permissions boundary policy template
+│       └── partner-boundary.json    # IAM permissions boundary scoped to serverless services
 ├── scripts/                         # Helper scripts for local development
 ├── .github/
 │   ├── workflows/
@@ -50,6 +46,22 @@ repository, search for all `REPLACE_ME` markers and update them:
 ├── Makefile                         # Developer convenience targets
 └── .pre-commit-config.yaml          # Pre-commit hook configuration
 ```
+
+## Serverless services in scope
+
+The permissions boundary policy (`partner-boundary.json`) scopes partner workloads to the following AWS services:
+
+| Category | Services |
+|---|---|
+| Compute | Lambda |
+| API | API Gateway (REST, HTTP, WebSocket), Execute API |
+| Data | DynamoDB, S3 |
+| Messaging | SQS, SNS, EventBridge, EventBridge Scheduler |
+| Orchestration | Step Functions |
+| Observability | CloudWatch, X-Ray |
+| Configuration | SSM Parameter Store, Secrets Manager, KMS |
+| Identity | IAM (path-restricted), Cognito |
+| Communication | SES |
 
 ## Pre-requisites
 
@@ -95,7 +107,7 @@ Actions to assume them via OIDC:
 ```json
 {
   "StringLike": {
-    "token.actions.githubusercontent.com:sub": "repo:MonsoonAccessorize/adena-aws-template:*"
+    "token.actions.githubusercontent.com:sub": "repo:MonsoonAccessorize/aws-template-developed-services:*"
   }
 }
 ```
@@ -136,4 +148,4 @@ the `REPLACE_PARTNER_NAME-boundary` permissions boundary policy attached. This i
 `partner-boundary.json` policy applied to deployment roles.
 
 Replace `REPLACE_PARTNER_NAME` with your partner's identifier (e.g., `adena`) throughout
-`policies/boundaries/partner-boundary.json` before deploying this policy to your accounts.
+`policies/boundaries/partner-boundary.json` and `modules/example-module/main.tf` before deploying.

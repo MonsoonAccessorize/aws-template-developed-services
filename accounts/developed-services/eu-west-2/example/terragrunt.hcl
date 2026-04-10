@@ -8,11 +8,11 @@ terraform {
 
 locals {
   environment        = get_env("ENVIRONMENT", "test")
-  log_retention_days = local.environment == "prod" ? 90 : 7
+  log_retention_days = local.environment == "prod" ? 90 : 14
 }
 
 inputs = {
-  name               = "example-module"
+  name               = "example-service"
   log_retention_days = local.log_retention_days
   tags = {
     Service = "ExampleService"

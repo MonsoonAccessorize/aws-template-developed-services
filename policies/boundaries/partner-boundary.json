@@ -2,9 +2,30 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "AllowServicesInBoundary",
+      "Sid": "AllowServerlessServices",
       "Effect": "Allow",
-      "Action": "*",
+      "Action": [
+        "lambda:*",
+        "apigateway:*",
+        "execute-api:*",
+        "dynamodb:*",
+        "sqs:*",
+        "sns:*",
+        "events:*",
+        "scheduler:*",
+        "states:*",
+        "s3:*",
+        "logs:*",
+        "cloudwatch:*",
+        "xray:*",
+        "ssm:*",
+        "secretsmanager:*",
+        "kms:*",
+        "iam:*",
+        "cognito-idp:*",
+        "cognito-identity:*",
+        "ses:*"
+      ],
       "Resource": "*"
     },
     {
@@ -17,9 +38,6 @@
       ],
       "Resource": "*",
       "Condition": {
-        "StringNotLike": {
-          "iam:ResourceTag/aws:RequestedRegion": "*"
-        },
         "StringNotLike": {
           "iam:PermissionsBoundary": "arn:aws:iam::*:policy/REPLACE_PARTNER_NAME-boundary"
         }

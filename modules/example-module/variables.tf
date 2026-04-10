@@ -1,16 +1,16 @@
-variable "tags" {
-  description = "Tags to apply to all resources in this module."
-  type        = map(string)
-  default     = {}
-}
-
 variable "name" {
-  description = "Name prefix for resources created by this module."
+  description = "Name prefix for all resources created by this module."
   type        = string
 }
 
 variable "log_retention_days" {
-  description = "Number of days to retain logs. Typically lower in test, higher in prod."
+  description = "Number of days to retain CloudWatch logs."
   type        = number
-  default     = 7
+  default     = 14
+}
+
+variable "tags" {
+  description = "Tags to apply to all resources."
+  type        = map(string)
+  default     = {}
 }

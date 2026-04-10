@@ -2,4 +2,4 @@
 # Add project-specific tags here
 mandatory_tags:
   ManagedBy: "Terraform"
-  Repository: "adena-aws-template"  # TEMPLATE: Update to consuming repo name
+  Repository: "aws-template-developed-services"  # TEMPLATE: Update to consuming repo name
